@@ -1,0 +1,96 @@
+esphome:
+  name: emre
+  friendly_name: Emre
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "****"
+
+ota:
+  password: "*****"
+
+# Example configuration entry for ESP32
+i2c:
+  sda: GPIO4
+  scl: GPIO5
+  scan: true
+  id: bus_a
+
+sensor:
+  - platform: mpu6050
+    address: 0x68
+    update_interval: 3s
+    accel_x:
+      name: "MPU6050 Accel X"
+      id: accel_x
+    accel_y:
+      name: "MPU6050 Accel Y"
+      id: accel_y
+    accel_z:
+      name: "MPU6050 Accel Z"
+      id: accel_z
+    gyro_x:
+      name: "MPU6050 Gyro X"
+    gyro_y:
+      name: "MPU6050 Gyro Y"
+    gyro_z:
+      name: "MPU6050 Gyro Z"
+    temperature:
+      name: "MPU6050 Temperature"
+
+binary_sensor:
+  - platform: template
+    name: "Earthquake Detected"
+    lambda: |-
+      if (abs(id(accel_x).state - id(lastX)) > id(movementThreshold) || abs(id(accel_y).state - id(lastY)) > id(movementThreshold) || abs(id(accel_z).state - id(lastZ)) > id(movementThreshold)) {
+        return true;
+      } else {
+        return false;
+      }
+
+globals:
+  - id: lastX
+    type: float
+    restore_value: no
+    initial_value: '0'
+  - id: lastY
+    type: float
+    restore_value: no
+    initial_value: '0'
+  - id: lastZ
+    type: float
+    restore_value: no
+    initial_value: '0'
+  - id: movementThreshold
+    type: float
+    restore_value: no
+    initial_value: '0.4'
+
+interval:
+  - interval: 500ms
+    then:
+      - lambda: |-
+          id(lastX) = id(accel_x).state;
+          id(lastY) = id(accel_y).state;
+          id(lastZ) = id(accel_z).state;
+
+
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Emre Fallback Hotspot"
+    password: "****"
+
+captive_portal:
+  # Example configuration entry
